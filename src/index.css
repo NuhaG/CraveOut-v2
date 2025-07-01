@@ -1,0 +1,55 @@
+@import "tailwindcss";
+
+:root {
+  --bg: #fff7f1;
+  --text: #2b2b2b;
+  --accent: #e55d3c;
+  --accent-hover: #ff7e5f;
+  --card-bg: #ffffff;
+  --card-text: #2b2b2b;
+
+  --bg-dark: #1e1e1e;
+  --text-dark: #fdfdfd;
+  --accent-dark: #ff8a65;
+  --accent-hover-dark: #ffb199;
+  --card-bg-dark: #292929;
+  --card-text-dark: #c9c5c5;
+}
+
+body {
+  background-color: var(--bg);
+  color: var(--text);
+  font-family: 'Poppins', sans-serif;
+  transition: background-color 0.3s, color 0.3s;
+}
+
+body.dark {
+  --bg: var(--bg-dark);
+  --text: var(--text-dark);
+  --accent: var(--accent-dark);
+  --accent-hover: var(--accent-hover-dark);
+  --card-bg: var(--card-bg-dark);
+  --card-text: var(--card-text-dark);
+
+  background-color: var(--bg);
+  color: var(--text);
+}
+
+/* Utility Classes */
+.bg-theme     { background-color: var(--bg); }
+.text-theme   { color: var(--text); }
+.bg-accent    { background-color: var(--accent); }
+.bg-accent:hover { background-color: var(--accent-hover); }
+.bg-card      { background-color: var(--card-bg); }
+.text-card    { color: var(--card-text); }
+.btn-theme-toggle {
+  background-color: var(--accent);
+  color: white;
+  transition: background-color 0.3s;
+}
+.btn-theme-toggle:hover {
+  background-color: var(--accent-hover);
+}
+.hover\:text-glow:hover {
+  text-shadow: 0 0 6px var(--accent);
+}
