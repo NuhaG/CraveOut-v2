@@ -9,11 +9,11 @@ import TrendingRecipes from "./components/TrendingRecipes";
 const App = () => {
   return (
     <div className="min-h-screen bg-theme text-theme overflow-x-hidden">
-      <div className="fixed top-0 left-0 w-full z-[5]">
+      <div className="w-full z-30">
         <Navbar />
       </div>
 
-      <div className="mt-16">
+      <div>
         <Hero />
         <TrendingRecipes />
         <Categories />

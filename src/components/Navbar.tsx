@@ -6,12 +6,13 @@ import { FaSun, FaMoon } from "react-icons/fa";
 
 const navLinks = [
   { id: "", title: "Home" },
+  { id: "trending", title: "Trending" },
   { id: "categories", title: "Categories" },
-  { id: "about", title: "About" },
   { id: "donate", title: "Donate" },
 ];
 
 const Navbar = () => {
+  // Mobile responsive navbar and theme states
   const [toggle, setToggle] = useState(false);
   const [isDark, setIsDark] = useState(false);
 
@@ -23,21 +24,6 @@ const Navbar = () => {
     setIsDark(prefersDark);
     document.body.classList.toggle("dark", prefersDark);
   }, []);
-
-  // Apply dark class on change
-  useEffect(() => {
-    document.body.classList.toggle("dark", isDark);
-  }, [isDark]);
-
-  const ThemeToggle = () => (
-    <button
-      onClick={() => setIsDark(!isDark)}
-      aria-label="Toggle Theme"
-      className="p-2 rounded-full flex items-center justify-center btn-theme-toggle"
-    >
-      {isDark ? <FaSun /> : <FaMoon />}
-    </button>
-  );
 
   return (
     <nav className="w-full flex justify-between items-center px-6 py-4 bg-theme text-theme shadow-md relative z-50 transition-colors">
@@ -59,7 +45,17 @@ const Navbar = () => {
           </li>
         ))}
         <li>
-          <ThemeToggle />
+          {/* ThemeToggle */}
+          <button
+            onClick={() => {
+              setIsDark(!isDark);
+              document.body.classList.toggle("dark");
+            }}
+            aria-label="Toggle Theme"
+            className="p-2 rounded-full flex items-center justify-center btn-theme-toggle"
+          >
+            {isDark ? <FaSun /> : <FaMoon />}
+          </button>
         </li>
       </ul>
 
@@ -86,7 +82,17 @@ const Navbar = () => {
               {nav.title}
             </a>
           ))}
-          <ThemeToggle />
+          {/* ThemeToggle */}
+          <button
+            onClick={() => {
+              setIsDark(!isDark);
+              document.body.classList.toggle("dark");
+            }}
+            aria-label="Toggle Theme"
+            className="p-2 rounded-full flex items-center justify-center btn-theme-toggle"
+          >
+            {isDark ? <FaSun /> : <FaMoon />}
+          </button>
         </div>
       )}
     </nav>
