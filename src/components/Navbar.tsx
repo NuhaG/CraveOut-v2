@@ -26,7 +26,7 @@ const Navbar = () => {
   }, []);
 
   return (
-    <nav className="w-full flex justify-between items-center px-6 py-4 bg-theme text-theme shadow-md relative z-50 transition-colors">
+    <nav className="w-full flex justify-between items-center px-6 py-4 bg-theme text-theme shadow-md relative z-50">
       {/* Logo */}
       <div className="text-2xl font-bold hover:text-glow">
         <a href="/">CraveOut</a>

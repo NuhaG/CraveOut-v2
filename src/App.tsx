@@ -8,12 +8,12 @@ import TrendingRecipes from "./components/TrendingRecipes";
 
 const App = () => {
   return (
-    <div className="min-h-screen bg-theme text-theme overflow-x-hidden">
-      <div className="w-full z-30">
+    <div className="min-h-screen bg-theme text-theme overflow-x-hidden scroll-pt-[80px] scroll-smooth">
+      <div className="w-full fixed top-0 z-50">
         <Navbar />
       </div>
 
-      <div>
+      <div className="pt-[48px]">
         <Hero />
         <TrendingRecipes />
         <Categories />
