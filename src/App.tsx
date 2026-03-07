@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import About from "./components/About";
 import AiChatPage from "./components/AiChatPage";
 import Categories from "./components/Categories";
@@ -8,45 +8,45 @@ import Footer from "./components/Footer";
 import Hero from "./components/Hero";
 import Navbar from "./components/Navbar";
 import TrendingRecipes from "./components/TrendingRecipes";
+import { Navigate, Route, Routes, useLocation } from "react-router-dom";
 
 const App = () => {
-  const [view, setView] = useState<"home" | "favorites" | "ai-chat">("home");
-
-  const handleNavigate = (nextView: "home" | "favorites" | "ai-chat") => {
-    setView(nextView);
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  };
+  const { pathname } = useLocation();
 
   useEffect(() => {
-    const titles: Record<typeof view, string> = {
-      home: "CraveOut",
-      favorites: "CraveOut | Favorites",
-      "ai-chat": "CraveOut | AI Chat",
+    const titles: Record<string, string> = {
+      "/": "CraveOut",
+      "/favorites": "CraveOut | Favorites",
+      "/ai-chat": "CraveOut | AI Chat",
     };
-    document.title = titles[view];
-  }, [view]);
+    document.title = titles[pathname] ?? "CraveOut";
+  }, [pathname]);
 
   return (
     <div className="min-h-screen bg-theme text-theme overflow-x-hidden scroll-pt-[80px] scroll-smooth">
       <div className="w-full fixed top-0 z-50">
-        <Navbar currentView={view} onNavigate={handleNavigate} />
+        <Navbar />
       </div>
 
       <div className="pt-[48px]">
-        {view === "home" ? (
-          <>
-            <Hero />
-            <TrendingRecipes />
-            <Categories />
-            <Donate />
-            <About />
-          </>
-        ) : view === "favorites" ? (
-          <FavoritesPage />
-        ) : (
-          <AiChatPage />
-        )}
-        <Footer />
+        <Routes>
+          <Route
+            path="/"
+            element={
+              <>
+                <Hero />
+                <TrendingRecipes />
+                <Categories />
+                <Donate />
+                <About />
+              </>
+            }
+          />
+          <Route path="/favorites" element={<FavoritesPage />} />
+          <Route path="/ai-chat" element={<AiChatPage />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+        {pathname !== "/ai-chat" && <Footer />}
       </div>
     </div>
   );
