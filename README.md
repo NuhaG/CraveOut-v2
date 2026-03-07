@@ -9,7 +9,7 @@
 ### 🍴 Recipe Discovery
 
 * Hero section with dynamic recipe search
-* Trending recipes powered by random meal generation
+* Trending recipes powered by random meal generation (single render on initial load)
 * Category-based recipe browsing
 * Quick recipe preview overlay
 * Unified `RecipeCard` component across trending and category sections
@@ -26,6 +26,8 @@
 * Ask for recipe ideas, cooking tips, or meal suggestions
 * Full-width chat layout with fixed composer input
 * Auto-formatted markdown AI responses
+* Quick action prompts (15-min meal, high protein, budget meal, healthy swap)
+* Optional favorites-context toggle (uses saved favorites from LocalStorage)
 
 ### 🎨 UI / UX
 
@@ -35,6 +37,7 @@
 * Modern card-based UI
 * Route-based navigation for Home, Favorites, and AI Chat
 * Custom browser tab icon (`icon.png`)
+* AI Chat page hides footer for distraction-free chatting
 
 ---
 
@@ -159,13 +162,13 @@ This React version brings modularity, speed, and a richer developer experience u
 
 > All screenshots below showcase **Dark Mode**. Light mode is also supported in the app.
 
-### 🔍 Hero Section with Search Bar
+### Hero Section with Search Bar
 ![Hero](./screenshots/hero.png)
 
-### 📈 Trending Recipes
+### Trending Recipes
 ![Trending](./screenshots/trending.png)
 
-### 🎏 Recipe Card Overlay
+### Recipe Card Overlay
 ![Recipe Card](./screenshots/recipe-card.png)
 
 ---

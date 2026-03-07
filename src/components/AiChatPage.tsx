@@ -4,6 +4,7 @@ import { BiSend } from "react-icons/bi";
 import { GiChefToque } from "react-icons/gi";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import { getFavorites } from "../lib/favorites";
 
 type ChatMessage = {
   role: "user" | "assistant";
@@ -15,20 +16,38 @@ const AiChat = () => {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [useFavoritesContext, setUseFavoritesContext] = useState(true);
 
-  const handleGenerate = async () => {
-    if (!prompt.trim()) return;
+  const quickPrompts = [
+    { label: "15-min meal", text: "Give me a 15-minute dinner recipe." , tone: "quick" as const},
+    { label: "High protein", text: "Suggest a high-protein meal idea.", tone: "healthy" as const },
+    { label: "Budget meal", text: "Give me a budget-friendly dinner recipe.", tone: "budget" as const },
+    { label: "Healthy swap", text: "How can I make my current meal healthier?", tone: "healthy" as const },
+  ];
 
-    const userPrompt = prompt.trim();
+  const handleGenerate = async (
+    overrideMessage?: string,
+    tone: "balanced" | "quick" | "healthy" | "budget" = "balanced"
+  ) => {
+    const activePrompt = (overrideMessage ?? prompt).trim();
+    if (!activePrompt) return;
+
+    const userPrompt = activePrompt;
     setMessages((prev) => [...prev, { role: "user", content: userPrompt }]);
     setPrompt("");
     setLoading(true);
     setError(null);
 
     try {
-      const res = await generateRecipe(
-        `You are a cooking assistant. Give a clean recipe response with title, ingredients list, and step-by-step instructions.\n\nUser input: ${userPrompt}`
-      );
+      const favorites = useFavoritesContext
+        ? getFavorites().map((item) => item.strMeal)
+        : [];
+
+      const res = await generateRecipe({
+        message: userPrompt,
+        favorites,
+        tone,
+      });
       setMessages((prev) => [...prev, { role: "assistant", content: res }]);
     } catch (err) {
       console.error(err);
@@ -50,6 +69,19 @@ const AiChat = () => {
               <p className="text-2xl md:text-3xl font-bold text-theme">
                 Ask your chef assistant for recipes, substitutions, or quick meal ideas.
               </p>
+              <div className="mt-6 flex flex-wrap justify-center gap-2">
+                {quickPrompts.map((item) => (
+                  <button
+                    key={item.label}
+                    type="button"
+                    disabled={loading}
+                    onClick={() => void handleGenerate(item.text, item.tone)}
+                    className="rounded-full border border-[var(--accent)] px-4 py-2 text-sm text-theme hover:bg-[var(--accent)]/10"
+                  >
+                    {item.label}
+                  </button>
+                ))}
+              </div>
             </div>
           )}
 
@@ -114,6 +146,17 @@ const AiChat = () => {
         </div>
 
         <div className="fixed bottom-0 left-0 right-0 z-40 w-full px-4 md:px-8 py-2 bg-card shadow-[0_-4px_12px_rgba(0,0,0,0.2)]">
+          <div className="mb-2 flex items-center justify-between text-xs text-card">
+            <label className="inline-flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={useFavoritesContext}
+                onChange={(e) => setUseFavoritesContext(e.target.checked)}
+                className="accent-[var(--accent)]"
+              />
+              Use favorites as context
+            </label>
+          </div>
           <div className="flex items-stretch gap-2">
             <textarea
               placeholder="eggs, tomato, cheese..."
