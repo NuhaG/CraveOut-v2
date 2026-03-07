@@ -1,5 +1,11 @@
 import { useEffect, useState } from "react";
-import CategoryCard from "./CategoryCard";
+import InstructionCard from "./Instructions";
+import RecipeCard from "./RecipeCard";
+import {
+  favoritesUpdatedEvent,
+  getFavorites,
+  toggleFavorite,
+} from "../lib/favorites";
 
 type Category = {
   strCategory: string;
@@ -11,39 +17,98 @@ type Meal = {
   strMealThumb: string;
 };
 
+type MealLookupResponse = {
+  meals?: Array<{
+    idMeal: string;
+    strMeal: string;
+    strMealThumb: string;
+    strInstructions: string;
+  }>;
+};
+
 const Categories = () => {
   const [categories, setCategories] = useState<Category[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [meals, setMeals] = useState<Meal[]>([]);
+  const [categoriesLoading, setCategoriesLoading] = useState(true);
+  const [mealsLoading, setMealsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [selectedMeal, setSelectedMeal] = useState<
+    (Meal & { strInstructions: string }) | null
+  >(null);
+  const [favoriteIds, setFavoriteIds] = useState<string[]>([]);
+
+  const syncFavorites = () => {
+    setFavoriteIds(getFavorites().map((item) => item.idMeal));
+  };
 
   // Fetch categories
   useEffect(() => {
+    setCategoriesLoading(true);
+    setError(null);
+    syncFavorites();
+    window.addEventListener(favoritesUpdatedEvent, syncFavorites);
+
     fetch("https://www.themealdb.com/api/json/v1/1/categories.php")
       .then((res) => res.json())
       .then((data) => setCategories(data.categories))
-      .catch((err) => console.error("Error fetching categories:", err));
+      .catch((err) => {
+        console.error("Error fetching categories:", err);
+        setError("Couldn't load categories.");
+      })
+      .finally(() => setCategoriesLoading(false));
+
+    return () => window.removeEventListener(favoritesUpdatedEvent, syncFavorites);
   }, []);
 
   // Fetch meals for selected category
   useEffect(() => {
     if (!selectedCategory) return;
+    setMealsLoading(true);
+    setError(null);
 
     fetch(
-      `https://www.themealdb.com/api/json/v1/1/filter.php?c=${selectedCategory}`
+      `https://www.themealdb.com/api/json/v1/1/filter.php?c=${encodeURIComponent(selectedCategory)}`
     )
       .then((res) => res.json())
-      .then((data) => setMeals(data.meals))
-      .catch((err) => console.error("Error fetching meals:", err));
+      .then((data) => setMeals((data.meals ?? []) as Meal[]))
+      .catch((err) => {
+        console.error("Error fetching meals:", err);
+        setError("Couldn't load meals for this category.");
+      })
+      .finally(() => setMealsLoading(false));
   }, [selectedCategory]);
 
+  const handleMealClick = async (meal: Meal) => {
+    try {
+      const response = await fetch(
+        `https://www.themealdb.com/api/json/v1/1/lookup.php?i=${meal.idMeal}`
+      );
+      const data = (await response.json()) as MealLookupResponse;
+      const detail = data.meals?.[0];
+
+      setSelectedMeal({
+        ...meal,
+        strInstructions: detail?.strInstructions?.trim() ?? "",
+      });
+    } catch (err) {
+      console.error("Error loading meal instructions:", err);
+      setSelectedMeal({
+        ...meal,
+        strInstructions: "",
+      });
+    }
+  };
+
   return (
-    <section id="categories">
+    <section id="categories" className="px-4">
       <h1 className="text-3xl md:text-4xl font-bold text-center mb-8 text-[var(--accent)]">
         Explore Categories
       </h1>
 
       <div className="flex flex-wrap justify-center gap-5 sm:flex-row flex-col items-center">
-        {categories.map((cat) => (
+        {categoriesLoading && <p className="text-card">Loading categories...</p>}
+        {!categoriesLoading && categories.map((cat) => (
           <div key={cat.strCategory}>
             <button
               onClick={() => setSelectedCategory(cat.strCategory)}
@@ -54,6 +119,7 @@ const Categories = () => {
           </div>
         ))}
       </div>
+      {error && <p className="text-center mt-6 text-red-400">{error}</p>}
 
       {selectedCategory && (
         <div className="mt-10">
@@ -62,15 +128,35 @@ const Categories = () => {
           </h2>
 
           <div className="flex flex-wrap justify-center gap-6">
-            {meals.map((meal) => (
-              <CategoryCard
+            {mealsLoading && <p className="text-card">Loading meals...</p>}
+            {!mealsLoading && meals.map((meal) => (
+              <RecipeCard
                 key={meal.idMeal}
+                id={meal.idMeal}
                 name={meal.strMeal}
                 img={meal.strMealThumb}
+                isFavorite={favoriteIds.includes(meal.idMeal)}
+                onToggleFavorite={() =>
+                  toggleFavorite({
+                    idMeal: meal.idMeal,
+                    strMeal: meal.strMeal,
+                    strMealThumb: meal.strMealThumb,
+                  })
+                }
+                onClick={() => void handleMealClick(meal)}
               />
             ))}
           </div>
         </div>
+      )}
+
+      {selectedMeal && (
+        <InstructionCard
+          name={selectedMeal.strMeal}
+          img={selectedMeal.strMealThumb}
+          instructions={selectedMeal.strInstructions}
+          onClose={() => setSelectedMeal(null)}
+        />
       )}
     </section>
   );

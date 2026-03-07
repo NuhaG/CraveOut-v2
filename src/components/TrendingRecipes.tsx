@@ -1,6 +1,11 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import RecipeCard from "./RecipeCard";
 import InstructionCard from "./Instructions";
+import {
+  favoritesUpdatedEvent,
+  getFavorites,
+  toggleFavorite,
+} from "../lib/favorites";
 
 type Recipe = {
   idMeal: string;
@@ -14,30 +19,53 @@ type Recipe = {
 const TrendingRecipes = () => {
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
   const [selectedRecipe, setSelectedRecipe] = useState<Recipe | null>(null);
+  const [favoriteIds, setFavoriteIds] = useState<string[]>([]);
+  const hasLoadedOnStart = useRef(false);
+  const TRENDING_LIMIT = 12;
+
+  const syncFavorites = () => {
+    setFavoriteIds(getFavorites().map((item) => item.idMeal));
+  };
+
+  const fetchRecipes = async (limit: number) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const requests = Array.from({ length: limit }, () =>
+        fetch("https://www.themealdb.com/api/json/v1/1/random.php").then(
+          (res) => res.json()
+        )
+      );
+
+      const results = await Promise.all(requests);
+      const meals = results
+        .map((data) => data.meals?.[0] as Recipe | undefined)
+        .filter((meal): meal is Recipe => Boolean(meal));
+
+      // random endpoint can duplicate meals -> keep unique ids for cleaner UI
+      const uniqueMeals = Array.from(
+        new Map(meals.map((meal) => [meal.idMeal, meal])).values()
+      );
+
+      setRecipes(uniqueMeals);
+    } catch (err) {
+      console.error("Error fetching recipes:", err);
+      setError("Couldn't load trending recipes. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchRecipes = async () => {
-      try {
-        const requests = Array.from({ length: 20 }, () =>
-          fetch("https://www.themealdb.com/api/json/v1/1/random.php").then(
-            (res) => res.json()
-          )
-        );
-
-        // Waits for all the recipes
-        const results = await Promise.all(requests);
-
-        const meals: Recipe[] = results.map((data) => data.meals?.[0]);
-        setRecipes(meals);
-      } catch (err) {
-        console.error("Error fetching recipes:", err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchRecipes();
+    if (!hasLoadedOnStart.current) {
+      hasLoadedOnStart.current = true;
+      void fetchRecipes(TRENDING_LIMIT);
+    }
+    syncFavorites();
+    window.addEventListener(favoritesUpdatedEvent, syncFavorites);
+    return () => window.removeEventListener(favoritesUpdatedEvent, syncFavorites);
   }, []);
 
   return (
@@ -50,11 +78,29 @@ const TrendingRecipes = () => {
         <h3 className="text-center text-xl text-[var(--card-text)]">
           Loading...
         </h3>
+      ) : error ? (
+        <div className="text-center">
+          <p className="text-red-400">{error}</p>
+        </div>
       ) : (
         <div className="flex flex-wrap justify-center gap-6 sm:flex-row flex-col items-center">
           {recipes.map((recipe) => (
             <div key={recipe.idMeal} className="w-64">
-              <RecipeCard name={recipe.strMeal} img={recipe.strMealThumb} onClick={() => setSelectedRecipe(recipe)}/>
+              <RecipeCard
+                id={recipe.idMeal}
+                name={recipe.strMeal}
+                img={recipe.strMealThumb}
+                isFavorite={favoriteIds.includes(recipe.idMeal)}
+                onToggleFavorite={() =>
+                  toggleFavorite({
+                    idMeal: recipe.idMeal,
+                    strMeal: recipe.strMeal,
+                    strMealThumb: recipe.strMealThumb,
+                    strInstructions: recipe.strInstructions,
+                  })
+                }
+                onClick={() => setSelectedRecipe(recipe)}
+              />
             </div>
           ))}
         </div>

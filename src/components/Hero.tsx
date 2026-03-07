@@ -1,7 +1,13 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { BiSearch } from "react-icons/bi";
+import { TbArrowsShuffle } from "react-icons/tb";
 import RecipeCard from "./RecipeCard";
 import InstructionCard from "./Instructions";
+import {
+  favoritesUpdatedEvent,
+  getFavorites,
+  toggleFavorite,
+} from "../lib/favorites";
 
 type Meal = {
   idMeal: string;
@@ -18,14 +24,58 @@ const Hero = () => {
   const [name, setName] = useState("");
   const [recipe, setRecipe] = useState<MealResponse | null>(null);
   const [selected, setSelected] = useState<Meal | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [favoriteIds, setFavoriteIds] = useState<string[]>([]);
+
+  const syncFavorites = () => {
+    setFavoriteIds(getFavorites().map((item) => item.idMeal));
+  };
+
+  useEffect(() => {
+    syncFavorites();
+    window.addEventListener(favoritesUpdatedEvent, syncFavorites);
+    return () => window.removeEventListener(favoritesUpdatedEvent, syncFavorites);
+  }, []);
 
   const handleSearch = async () => {
-    fetch(`https://www.themealdb.com/api/json/v1/1/search.php?s=${name}`)
+    const query = name.trim();
+    if (!query) return;
+
+    setLoading(true);
+    setError(null);
+
+    fetch(
+      `https://www.themealdb.com/api/json/v1/1/search.php?s=${encodeURIComponent(query)}`
+    )
       .then((res) => res.json())
-      .then((data) => {
+      .then((data: MealResponse) => {
         setRecipe(data);
       })
-      .catch((err) => console.error(err));
+      .catch((err) => {
+        console.error(err);
+        setError("Search failed. Please try again.");
+      })
+      .finally(() => setLoading(false));
+  };
+
+  const handleSurpriseMe = async () => {
+    setLoading(true);
+    setError(null);
+
+    fetch("https://www.themealdb.com/api/json/v1/1/random.php")
+      .then((res) => res.json())
+      .then((data: MealResponse) => {
+        const meal = data.meals?.[0] ?? null;
+        if (meal) {
+          setRecipe({ meals: [meal] });
+        }
+      })
+      .catch((err) => {
+        console.error(err);
+        setError("Couldn't fetch a random recipe.");
+      })
+      .finally(() => setLoading(false));
   };
 
   return (
@@ -55,22 +105,39 @@ const Hero = () => {
 
           {/* Search Input */}
           <div className="flex justify-center items-center mt-6 md:mt-10 mx-auto w-full">
-            <input
-              type="text"
-              name="Recipe"
-              placeholder="Search Your Next Recipe..."
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-              className="rounded-l-lg p-2 md:p-4 text-md w-[70%] border-2 border-[var(--accent)] focus:outline-none focus:border-[var(--accent-hover)]"
-            />
-            <button
-              className="bg-[var(--accent)] hover:bg-[var(--accent-hover)] rounded-r-lg p-2 md:p-4 flex items-center justify-center"
-              onClick={handleSearch}
-            >
-              <BiSearch size={24} />
-            </button>
+            <div className="w-[70%] flex items-center rounded-lg border-2 border-[var(--accent)] overflow-hidden">
+              <input
+                type="text"
+                name="Recipe"
+                placeholder="Search Your Next Recipe..."
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+                className="flex-1 p-2 md:p-4 text-md bg-transparent focus:outline-none"
+              />
+              <button
+                type="button"
+                onClick={handleSurpriseMe}
+                disabled={loading}
+                aria-label="Random recipe"
+                className="bg-[var(--accent)] hover:bg-[var(--accent-hover)] p-2 md:p-4 flex items-center justify-center"
+              >
+                <TbArrowsShuffle size={24} />
+              </button>
+              <button
+                type="button"
+                className="bg-[var(--accent)] hover:bg-[var(--accent-hover)] p-2 md:p-4 flex items-center justify-center"
+                onClick={handleSearch}
+                disabled={loading}
+                aria-label="Search recipes"
+              >
+                <BiSearch size={24} />
+              </button>
+            </div>
           </div>
+
+          {loading && <p className="mt-4 text-card">Loading recipes...</p>}
+          {error && <p className="mt-4 text-red-400">{error}</p>}
 
           {/* Search Results */}
           {recipe && (
@@ -81,8 +148,18 @@ const Hero = () => {
                   {recipe.meals.map((meal) => (
                     <RecipeCard
                       key={meal.idMeal}
+                      id={meal.idMeal}
                       name={meal.strMeal}
                       img={meal.strMealThumb}
+                      isFavorite={favoriteIds.includes(meal.idMeal)}
+                      onToggleFavorite={() =>
+                        toggleFavorite({
+                          idMeal: meal.idMeal,
+                          strMeal: meal.strMeal,
+                          strMealThumb: meal.strMealThumb,
+                          strInstructions: meal.strInstructions,
+                        })
+                      }
                       onClick={() => setSelected(meal)}
                     />
                   ))}

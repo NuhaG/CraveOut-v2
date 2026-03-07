@@ -9,7 +9,7 @@ const About = () => {
           CraveOut is your ultimate destination to explore delicious recipes from around the world. Whether you're a passionate home cook or just getting started, we bring the best flavors right to your screen.
         </p>
         <p className="text-md text-card italic">
-          “People who love to eat are always the best people.” – Julia Child
+          “People who love to eat are always the best people.” - Julia Child
         </p>
       </div>
     </section>
