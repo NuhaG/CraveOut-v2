@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import RecipeCard from "./RecipeCard";
 import InstructionCard from "./Instructions";
 import {
@@ -6,6 +6,7 @@ import {
   getFavorites,
   toggleFavorite,
 } from "../lib/favorites";
+import RecipeSkeleton from "./RecipeSkeleton";
 
 type Recipe = {
   idMeal: string;
@@ -29,7 +30,7 @@ const TrendingRecipes = () => {
     setFavoriteIds(getFavorites().map((item) => item.idMeal));
   };
 
-  const fetchRecipes = async (limit: number) => {
+  const fetchRecipes = useCallback(async (limit: number) => {
     setLoading(true);
     setError(null);
     try {
@@ -56,7 +57,7 @@ const TrendingRecipes = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     if (!hasLoadedOnStart.current) {
@@ -66,7 +67,7 @@ const TrendingRecipes = () => {
     syncFavorites();
     window.addEventListener(favoritesUpdatedEvent, syncFavorites);
     return () => window.removeEventListener(favoritesUpdatedEvent, syncFavorites);
-  }, []);
+  }, [fetchRecipes]);
 
   return (
     <section id="trending" className="py-16 px-4 bg-[var(--bg)] text-[var(--text)]">
@@ -75,9 +76,11 @@ const TrendingRecipes = () => {
       </h2>
 
       {loading ? (
-        <h3 className="text-center text-xl text-[var(--card-text)]">
-          Loading...
-        </h3>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          {Array.from({ length: 8 }).map((_, i) => (
+            <RecipeSkeleton key={i} />
+          ))}
+        </div>
       ) : error ? (
         <div className="text-center">
           <p className="text-red-400">{error}</p>
@@ -106,7 +109,7 @@ const TrendingRecipes = () => {
         </div>
       )}
 
-       {selectedRecipe && (
+      {selectedRecipe && (
         <InstructionCard
           name={selectedRecipe.strMeal}
           img={selectedRecipe.strMealThumb}

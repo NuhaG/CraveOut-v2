@@ -6,6 +6,7 @@ import {
   getFavorites,
   toggleFavorite,
 } from "../lib/favorites";
+import RecipeSkeleton from "./RecipeSkeleton";
 
 type Category = {
   strCategory: string;
@@ -107,7 +108,13 @@ const Categories = () => {
       </h1>
 
       <div className="flex flex-wrap justify-center gap-5 sm:flex-row flex-col items-center">
-        {categoriesLoading && <p className="text-card">Loading categories...</p>}
+        {categoriesLoading && (
+          <div className="w-full max-w-6xl grid grid-cols-2 md:grid-cols-4 gap-4">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <RecipeSkeleton key={i} />
+            ))}
+          </div>
+        )}
         {!categoriesLoading && categories.map((cat) => (
           <div key={cat.strCategory}>
             <button
@@ -128,24 +135,28 @@ const Categories = () => {
           </h2>
 
           <div className="flex flex-wrap justify-center gap-6">
-            {mealsLoading && <p className="text-card">Loading meals...</p>}
-            {!mealsLoading && meals.map((meal) => (
-              <RecipeCard
-                key={meal.idMeal}
-                id={meal.idMeal}
-                name={meal.strMeal}
-                img={meal.strMealThumb}
-                isFavorite={favoriteIds.includes(meal.idMeal)}
-                onToggleFavorite={() =>
-                  toggleFavorite({
-                    idMeal: meal.idMeal,
-                    strMeal: meal.strMeal,
-                    strMealThumb: meal.strMealThumb,
-                  })
-                }
-                onClick={() => void handleMealClick(meal)}
-              />
-            ))}
+            {mealsLoading ?
+              <div className="w-full max-w-6xl grid grid-cols-2 md:grid-cols-4 gap-4">
+                {Array.from({ length: 4 }).map((_, i) => (
+                  <RecipeSkeleton key={i} />
+                ))}
+              </div> : meals.map((meal) => (
+                <RecipeCard
+                  key={meal.idMeal}
+                  id={meal.idMeal}
+                  name={meal.strMeal}
+                  img={meal.strMealThumb}
+                  isFavorite={favoriteIds.includes(meal.idMeal)}
+                  onToggleFavorite={() =>
+                    toggleFavorite({
+                      idMeal: meal.idMeal,
+                      strMeal: meal.strMeal,
+                      strMealThumb: meal.strMealThumb,
+                    })
+                  }
+                  onClick={() => void handleMealClick(meal)}
+                />
+              ))}
           </div>
         </div>
       )}

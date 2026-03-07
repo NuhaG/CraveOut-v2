@@ -8,6 +8,7 @@ import {
   getFavorites,
   toggleFavorite,
 } from "../lib/favorites";
+import RecipeSkeleton from "./RecipeSkeleton";
 
 type Meal = {
   idMeal: string;
@@ -136,7 +137,13 @@ const Hero = () => {
             </div>
           </div>
 
-          {loading && <p className="mt-4 text-card">Loading recipes...</p>}
+          {loading && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-6">
+              {Array.from({ length: 2 }).map((_, i) => (
+                <RecipeSkeleton key={`hero-skeleton-${i}`} />
+              ))}
+            </div>
+          )}
           {error && <p className="mt-4 text-red-400">{error}</p>}
 
           {/* Search Results */}
