@@ -6,12 +6,21 @@ import aiRoutes from "./routes/aiRoutes.js";
 dotenv.config();
 
 const app = express();
-const allowedOrigin = process.env.FRONTEND_ORIGIN || "http://localhost:5173";
+const allowedOrigins = (process.env.FRONTEND_ORIGIN || "http://localhost:5173")
+  .split(",")
+  .map((origin) => origin.trim())
+  .filter(Boolean);
 
 app.disable("x-powered-by");
 app.use(
   cors({
-    origin: allowedOrigin,
+    origin(origin, callback) {
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+        return;
+      }
+      callback(new Error("Not allowed by CORS"));
+    },
     methods: ["POST"],
   })
 );
