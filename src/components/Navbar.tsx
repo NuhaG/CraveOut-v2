@@ -82,6 +82,18 @@ const Navbar = () => {
           </NavLink>
         </li>
         <li>
+          <NavLink
+            to="/ai-recipes"
+            className={({ isActive }) =>
+              `transition duration-200 ${
+                isActive ? "text-[var(--accent)]" : "hover:text-[var(--accent-hover)]"
+              }`
+            }
+          >
+            AI Recipes
+          </NavLink>
+        </li>
+        <li>
           {/* ThemeToggle */}
           <button
             onClick={() => setTheme(!isDark)}
@@ -126,6 +138,13 @@ const Navbar = () => {
             onClick={() => setToggle(false)}
           >
             AI Chat
+          </NavLink>
+          <NavLink
+            to="/ai-recipes"
+            className="text-left transition hover:text-[var(--accent-hover)]"
+            onClick={() => setToggle(false)}
+          >
+            AI Recipes
           </NavLink>
           {/* ThemeToggle */}
           <button

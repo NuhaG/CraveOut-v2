@@ -2,9 +2,11 @@ import { useState } from "react";
 import { generateRecipe } from "../lib/gemini";
 import { BiSend } from "react-icons/bi";
 import { GiChefToque } from "react-icons/gi";
+import { BsBookmarkPlus, BsBookmarkCheck } from "react-icons/bs";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { getFavorites } from "../lib/favorites";
+import { parsePlanSections, saveAiPlan } from "../lib/aiPlans";
 
 type ChatMessage = {
   role: "user" | "assistant";
@@ -17,12 +19,15 @@ const AiChat = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [useFavoritesContext, setUseFavoritesContext] = useState(true);
+  const [savedMessageKeys, setSavedMessageKeys] = useState<Record<string, boolean>>({});
 
   const quickPrompts = [
-    { label: "15-min meal", text: "Give me a 15-minute dinner recipe." , tone: "quick" as const},
+    { label: "15-min meal", text: "Give me a 15-minute dinner recipe.", tone: "quick" as const },
     { label: "High protein", text: "Suggest a high-protein meal idea.", tone: "healthy" as const },
     { label: "Budget meal", text: "Give me a budget-friendly dinner recipe.", tone: "budget" as const },
     { label: "Healthy swap", text: "How can I make my current meal healthier?", tone: "healthy" as const },
+    { label: "3-day meal plan", text: "Create a practical 3-day meal plan with breakfast, lunch, and dinner.", tone: "balanced" as const, },
+    { label: "Dietary plan", text: "Build a dietary-friendly dinner plan with vegetarian and low-carb options.", tone: "healthy" as const, },
   ];
 
   const handleGenerate = async (
@@ -51,12 +56,33 @@ const AiChat = () => {
       setMessages((prev) => [...prev, { role: "assistant", content: res }]);
     } catch (err) {
       console.error(err);
-      setError(
-        "AI request failed. Check VITE_GEMINI_API_KEY in .env and verify the key is valid."
-      );
+      setError(err instanceof Error ? err.message : "AI request failed.");
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleSavePlan = (assistantIndex: number) => {
+    const assistantMessage = messages[assistantIndex];
+    if (!assistantMessage || assistantMessage.role !== "assistant") return;
+
+    const sections = parsePlanSections(assistantMessage.content);
+    if (sections.length === 0) return;
+
+    const userPrompt =
+      [...messages]
+        .slice(0, assistantIndex)
+        .reverse()
+        .find((message) => message.role === "user")?.content ?? "";
+
+    saveAiPlan({
+      userPrompt,
+      assistantReply: assistantMessage.content,
+      sections,
+    });
+
+    const key = `${assistantIndex}-${assistantMessage.content.slice(0, 24)}`;
+    setSavedMessageKeys((prev) => ({ ...prev, [key]: true }));
   };
 
   return (
@@ -67,7 +93,7 @@ const AiChat = () => {
             <div className="min-h-[58vh] flex flex-col justify-center items-center text-center px-4">
               <GiChefToque size={56} className="text-[var(--accent)] mb-4" />
               <p className="text-2xl md:text-3xl font-bold text-theme">
-                Ask your chef assistant for recipes, substitutions, or quick meal ideas.
+                Ask your chef assistant for recipes, meal plans, dietary adjustments, and cooking tips.
               </p>
               <div className="mt-6 flex flex-wrap justify-center gap-2">
                 {quickPrompts.map((item) => (
@@ -86,14 +112,13 @@ const AiChat = () => {
           )}
 
           {messages.map((message, index) => (
-            <div
-              key={`${message.role}-${index}`}
-              className={`max-w-4xl rounded-xl p-4 border ${
-                message.role === "user"
+            <div key={`${message.role}-${index}`} className="space-y-2">
+              <div
+                className={`max-w-4xl rounded-xl p-4 border ${message.role === "user"
                   ? "ml-auto bg-[var(--accent)]/10 border-[var(--accent)]"
                   : "mr-auto bg-card border-[var(--accent)]"
-              }`}
-            >
+                  }`}
+              >
               {message.role === "user" ? (
                 <p className="text-theme whitespace-pre-wrap">{message.content}</p>
               ) : (
@@ -127,14 +152,39 @@ const AiChat = () => {
                   >
                     {message.content}
                   </ReactMarkdown>
+                  {(() => {
+                    const sections = parsePlanSections(message.content);
+                    const saveKey = `${index}-${message.content.slice(0, 24)}`;
+                    if (sections.length === 0) return null;
+                    return (
+                      <button
+                        type="button"
+                        onClick={() => handleSavePlan(index)}
+                        className="inline-flex items-center gap-2 rounded-md border border-[var(--accent)] px-3 py-1.5 text-sm text-theme hover:bg-[var(--accent)]/10 mt-2"
+                      >
+                        {savedMessageKeys[saveKey] ? (
+                          <>
+                            <BsBookmarkCheck size={15} />
+                            Saved
+                          </>
+                        ) : (
+                          <>
+                            <BsBookmarkPlus size={15} />
+                            Save plan
+                          </>
+                        )}
+                      </button>
+                    );
+                  })()}
                 </div>
               )}
+              </div>
             </div>
           ))}
 
           {loading && (
             <div className="max-w-4xl rounded-xl p-4 border mr-auto bg-card border-[var(--accent)]">
-              <p className="text-card">Generating recipe...</p>
+              <p className="text-card">Chef is preparing a recipe for you...</p>
             </div>
           )}
 

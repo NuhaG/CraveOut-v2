@@ -1,5 +1,10 @@
 # CraveOut 🍽️ – AI Powered Recipe Explorer
 
+![React](https://img.shields.io/badge/React-18-blue)
+![TypeScript](https://img.shields.io/badge/TypeScript-5-blue)
+![Vite](https://img.shields.io/badge/Vite-fast-purple)
+![License](https://img.shields.io/badge/License-MIT-green)
+
 **CraveOut** is a dynamic recipe explorer built using React, TypeScript, and Vite. It fetches delicious meals from the [TheMealDB API](https://www.themealdb.com/) and provides features like category browsing, trending meals, search functionality, theme toggling, AI generated recipes, and more – all with a responsive UI and modern design.
 
 ---
@@ -15,19 +20,20 @@
 * Unified `RecipeCard` component across trending and category sections
 * Skeleton loading states for trending, categories, and hero search results
 
+### 🤖 AI Cooking Assistant
+
+* AI Chat page powered by Gemini
+* AI Recipes page to view saved AI plans
+* Generate recipe ideas based on available ingredients  
+* Get quick cooking tips and substitutions  
+* Discover high-protein, budget, or quick meals  
+* Receive markdown-formatted responses for better readability 
+* Optional favorites-context toggle (uses saved favorites from LocalStorage)
+
 ### ⭐ Personalization
 
 * Favorites page with LocalStorage persistence
 * Easily save and remove favorite recipes
-
-### 🤖 AI Cooking Assistant
-
-* AI Chat page powered by Gemini
-* Ask for recipe ideas, cooking tips, or meal suggestions
-* Full-width chat layout with fixed composer input
-* Auto-formatted markdown AI responses
-* Quick action prompts (15-min meal, high protein, budget meal, healthy swap)
-* Optional favorites-context toggle (uses saved favorites from LocalStorage)
 
 ### 🎨 UI / UX
 
@@ -35,9 +41,9 @@
 * Light / Dark theme toggle
 * Smooth scrolling navigation
 * Modern card-based UI
-* Route-based navigation for Home, Favorites, and AI Chat
+* Route-based navigation for Home, Favorites, AI Chat, and AI Recipes
 * Custom browser tab icon (`icon.png`)
-* AI Chat page hides footer for distraction-free chatting
+* AI Chat and AI Recipes pages hide footer for distraction-free experience
 
 ---
 
@@ -58,10 +64,12 @@ npm install
 
 ### 3. Configure environment variables
 
-Create a `.env` file in the project root:
+Create a `.env` file in `backend/`:
 
 ```
-VITE_GEMINI_API_KEY=your_gemini_api_key_here
+GEMINI_API_KEY=your_gemini_api_key_here
+FRONTEND_ORIGIN=http://localhost:5173
+PORT=5000
 ```
 
 To generate an API key, visit [here](https://ai.google.dev/gemini-api/docs/api-key)
@@ -71,6 +79,16 @@ To generate an API key, visit [here](https://ai.google.dev/gemini-api/docs/api-k
 ```bash
 npm run dev
 ```
+
+In another terminal, run backend:
+
+```bash
+cd backend
+npm run dev
+```
+
+If you see `429 Too Many Requests` or quota errors on AI Chat, check your Gemini API project usage and free-tier limits:
+https://ai.google.dev/gemini-api/docs/rate-limits
 
 ### 5. Build for production
 
@@ -88,7 +106,7 @@ npm run preview
 
 ## 🛠 Tech Stack
 
-Frontend:
+### Frontend:
 
 * React
 * TypeScript
@@ -96,30 +114,52 @@ Frontend:
 * TailwindCSS
 * React Router DOM
 
-APIs:
+### APIs:
 
 * TheMealDB API
 * Google Gemini API
 
-Libraries:
+### Libraries:
 
 * react-markdown
 * remark-gfm
 
 ---
 
-## 📁 Project Structure
+## Project Structure
 
 ```
-├── public/
+CraveOut-v2
+│
+├── backend
+│   ├── controllers
+│   │   └── aiController.js
+│   │
+│   ├── middleware
+│   │   └── rateLimiter.js
+│   │
+│   ├── routes
+│   │   └── aiRoutes.js
+│   │
+│   ├── services
+│   │   └── geminiService.js
+│   │
+│   ├── package.json
+│   ├── package-lock.json
+│   ├── .env
+│   └── server.js
+│
+├── public
 │   ├── food.png
 │   ├── home.png
+│   ├── hungry.webp
 │   └── icon.png
 │
-├── src/
-│   ├── components/
+├── src
+│   ├── components
 │   │   ├── About.tsx
 │   │   ├── AiChatPage.tsx
+│   │   ├── AiRecipesPage.tsx
 │   │   ├── Categories.tsx
 │   │   ├── Donate.tsx
 │   │   ├── FavoritesPage.tsx
@@ -131,8 +171,9 @@ Libraries:
 │   │   ├── RecipeSkeleton.tsx
 │   │   └── TrendingRecipes.tsx
 │   │
-│   ├── lib/
+│   ├── lib
 │   │   ├── favorites.ts
+│   │   ├── aiPlans.ts
 │   │   └── gemini.ts
 │   │
 │   ├── App.tsx
@@ -144,6 +185,7 @@ Libraries:
 ├── eslint.config.js
 ├── index.html
 ├── package.json
+├── package-lock.json
 ├── README.md
 ├── tsconfig.json
 └── vite.config.ts
@@ -172,3 +214,14 @@ This React version brings modularity, speed, and a richer developer experience u
 ![Recipe Card](./screenshots/recipe-card.png)
 
 ---
+
+## 🔮 Future Improvements
+
+* Per-user chat history persistence
+* User authentication
+* AI-powered nutrition analysis
+* User recipe upload section
+
+## 📄 License
+
+This project is licensed under the MIT License.

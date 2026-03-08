@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import About from "./components/About";
 import AiChatPage from "./components/AiChatPage";
+import AiRecipesPage from "./components/AiRecipesPage";
 import Categories from "./components/Categories";
 import Donate from "./components/Donate";
 import FavoritesPage from "./components/FavoritesPage";
@@ -18,6 +19,7 @@ const App = () => {
       "/": "CraveOut",
       "/favorites": "CraveOut | Favorites",
       "/ai-chat": "CraveOut | AI Chat",
+      "/ai-recipes": "CraveOut | AI Recipes",
     };
     document.title = titles[pathname] ?? "CraveOut";
   }, [pathname]);
@@ -44,9 +46,10 @@ const App = () => {
           />
           <Route path="/favorites" element={<FavoritesPage />} />
           <Route path="/ai-chat" element={<AiChatPage />} />
+          <Route path="/ai-recipes" element={<AiRecipesPage />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
-        {pathname !== "/ai-chat" && <Footer />}
+        {pathname !== "/ai-chat" && pathname !== "/ai-recipes" && <Footer />}
       </div>
     </div>
   );
