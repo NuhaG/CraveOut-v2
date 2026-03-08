@@ -27,11 +27,33 @@ export async function generateRecipe({
     }),
   });
 
-  const data = await res.json();
-
-  if (!res.ok) {
-    throw new Error(data.error || "AI request failed");
+  const rawBody = await res.text();
+  const contentType = res.headers.get("content-type") ?? "";
+  const isJsonResponse = contentType.includes("application/json");
+  let parsedData: { reply?: string; error?: string } | null = null;
+  if (isJsonResponse && rawBody) {
+    try {
+      parsedData = JSON.parse(rawBody) as { reply?: string; error?: string };
+    } catch {
+      parsedData = null;
+    }
   }
 
-  return data.reply;
+  if (!res.ok) {
+    const bodySnippet = rawBody.replace(/\s+/g, " ").trim().slice(0, 140);
+    const apiError = parsedData?.error?.trim();
+    throw new Error(
+      apiError ||
+      (bodySnippet
+        ? `AI request failed (${res.status}). ${bodySnippet}`
+        : `AI request failed (${res.status}).`)
+    );
+  }
+
+  const reply = parsedData?.reply;
+  if (typeof reply !== "string" || !reply.trim()) {
+    throw new Error("AI service returned an unexpected response format.");
+  }
+
+  return reply;
 }
