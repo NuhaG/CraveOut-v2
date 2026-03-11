@@ -6,7 +6,10 @@ type GenerateRecipeInput = {
 
 function getApiUrl(path: string): string {
   const envBase = import.meta.env.VITE_API_BASE_URL?.trim();
-  const base = envBase || "";
+  const defaultBase = import.meta.env.PROD
+    ? "https://craveout-v2.onrender.com"
+    : "";
+  const base = envBase || defaultBase;
   if (!base) return path;
   return `${base.replace(/\/+$/, "")}${path}`;
 }
