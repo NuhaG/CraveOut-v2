@@ -74,6 +74,14 @@ PORT=5000
 
 To generate an API key, visit [here](https://ai.google.dev/gemini-api/docs/api-key)
 
+For the frontend, set your backend base URL (required for separate deployments like Vercel + Railway):
+
+```
+VITE_API_BASE_URL=https://your-backend.up.railway.app
+```
+
+If you proxy the backend under the same origin (for example, Vercel rewrites from `/api/*` to your backend), you can omit `VITE_API_BASE_URL`.
+
 ### 4. Run the development server
 
 ```bash

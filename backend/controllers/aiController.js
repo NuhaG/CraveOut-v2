@@ -7,6 +7,9 @@ function getAiErrorInfo(err) {
   if (raw.includes("api key") || raw.includes("apikey") || raw.includes("permission denied")) {
     return { status: 401, error: "Gemini API key is invalid or missing." };
   }
+  if (status === 403 || raw.includes("forbidden")) {
+    return { status: 403, error: "Gemini API key is not allowed to access this resource." };
+  }
   if (
     status === 429 ||
     raw.includes("quota") ||

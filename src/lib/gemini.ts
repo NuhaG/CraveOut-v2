@@ -6,10 +6,7 @@ type GenerateRecipeInput = {
 
 function getApiUrl(path: string): string {
   const envBase = import.meta.env.VITE_API_BASE_URL?.trim();
-  const defaultBase = import.meta.env.PROD
-    ? "https://craveout-v2.onrender.com"
-    : "";
-  const base = envBase || defaultBase;
+  const base = envBase || "";
   if (!base) return path;
   return `${base.replace(/\/+$/, "")}${path}`;
 }
@@ -34,6 +31,7 @@ export async function generateRecipe({
   const rawBody = await res.text();
   const contentType = res.headers.get("content-type") ?? "";
   const isJsonResponse = contentType.includes("application/json");
+  const isHtmlResponse = contentType.includes("text/html");
   let parsedData: { reply?: string; error?: string } | null = null;
   if (isJsonResponse && rawBody) {
     try {
@@ -44,6 +42,11 @@ export async function generateRecipe({
   }
 
   if (!res.ok) {
+    if (res.status === 404 && isHtmlResponse) {
+      throw new Error(
+        "API URL is misconfigured. Set VITE_API_BASE_URL to your backend (Railway) or add a Vercel rewrite that proxies /api/* to the backend."
+      );
+    }
     const bodySnippet = rawBody.replace(/\s+/g, " ").trim().slice(0, 140);
     const apiError = parsedData?.error?.trim();
     throw new Error(
