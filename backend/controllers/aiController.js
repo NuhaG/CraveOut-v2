@@ -1,28 +1,36 @@
 import { generateRecipe } from "../services/geminiService.js";
 
-function getAiErrorInfo(err) {
-  const status = Number(err?.status || err?.code || 0);
-  const raw = String(err?.message || "").toLowerCase();
+const FOOD_KEYWORDS = [
+  "food",
+  "meal",
+  "recipe",
+  "cook",
+  "cooking",
+  "dish",
+  "ingredient",
+  "hungry",
+  "breakfast",
+  "lunch",
+  "dinner",
+  "snack",
+  "dessert",
+  "drink",
+  "protein",
+  "vegan",
+  "vegetarian",
+  "keto",
+  "biryani",
+  "pasta",
+  "rice",
+  "chicken",
+  "egg",
+  "fish",
+  "salad",
+];
 
-  if (raw.includes("api key") || raw.includes("apikey") || raw.includes("permission denied")) {
-    return { status: 401, error: "Gemini API key is invalid or missing." };
-  }
-  if (status === 403 || raw.includes("forbidden")) {
-    return { status: 403, error: "Gemini API key is not allowed to access this resource." };
-  }
-  if (
-    status === 429 ||
-    raw.includes("quota") ||
-    raw.includes("resource has been exhausted") ||
-    raw.includes("too many requests")
-  ) {
-    return { status: 429, error: "Gemini quota/rate limit reached. Please try again later." };
-  }
-  if (status === 404 || raw.includes("model") || raw.includes("not found")) {
-    return { status: 404, error: "Configured Gemini model is unavailable for this key/project." };
-  }
-
-  return { status: 500, error: "AI service is temporarily unavailable. Please try again." };
+function isFoodRelated(text) {
+  const raw = String(text || "").toLowerCase();
+  return FOOD_KEYWORDS.some((word) => raw.includes(word));
 }
 
 export async function askAI(req, res) {
@@ -32,42 +40,55 @@ export async function askAI(req, res) {
     if (typeof message !== "string" || !message.trim()) {
       return res.status(400).json({ error: "Message required" });
     }
-    if (message.length > 2000) {
-      return res.status(400).json({ error: "Message too long" });
+
+    if (!isFoodRelated(message)) {
+      return res.json({
+        reply: "I can help with recipes, meal plans, dietary adjustments, and cooking tips.",
+      });
     }
 
     const safeTone = ["balanced", "quick", "healthy", "budget"].includes(tone)
       ? tone
       : "balanced";
     const safeFavorites = Array.isArray(favorites)
-      ? favorites
-          .filter((item) => typeof item === "string" && item.trim())
-          .slice(0, 8)
+      ? favorites.filter((item) => typeof item === "string" && item.trim()).slice(0, 20)
       : [];
 
-    const assistantRules = [
-      "You are CraveOut Chef AI.",
-      "Only answer food-related requests: recipes, meal ideas, meal plans, cooking methods, ingredient swaps, and dietary adjustments.",
-      "Treat broad messages like 'I am hungry' as valid food requests.",
-      "If the user asks non-food topics, briefly redirect with:",
-      '"I can help with recipes, meal plans, dietary adjustments, and cooking tips."',
-      "Use concise markdown.",
+    const prompt = [
+      "You are CraveOut Chef AI. Only answer food-related requests.",
+      "If user intent is unclear, infer a practical recipe request from context.",
+      `Tone: ${safeTone}`,
+      `User favorites: ${safeFavorites.join(", ") || "none"}`,
+      "",
+      "Return markdown using this exact section structure and headings:",
+      "## Dish Name",
+      "## Why This Fits",
+      "## Ingredients",
+      "## Instructions",
+      "## Time & Servings",
+      "## Nutrition Notes",
+      "## Budget / Swap Tips",
+      "",
+      "Formatting rules:",
+      "- Keep Ingredients as bullet list.",
+      "- Keep Instructions as numbered list.",
+      "- Keep response concise and practical.",
+      "- Do not include any non-food topics.",
+      "",
+      `User request: ${message.trim()}`,
     ].join("\n");
-
-    const prompt = `
-        ${assistantRules}
-
-        Tone: ${safeTone}
-        User favorite meals: ${safeFavorites.join(", ") || "none"}
-        User request: ${message.trim()}
-    `;
 
     const reply = await generateRecipe(prompt);
 
     res.json({ reply });
   } catch (err) {
     console.error("AI chat error:", err);
-    const info = getAiErrorInfo(err);
-    res.status(info.status).json({ error: info.error });
+    const status = Number(err?.status || err?.code || 500);
+    const safeStatus = Number.isFinite(status) && status >= 400 && status < 600 ? status : 500;
+    const message =
+      typeof err?.message === "string" && err.message.trim()
+        ? err.message
+        : "AI request failed.";
+    res.status(safeStatus).json({ error: message });
   }
 }

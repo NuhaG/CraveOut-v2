@@ -45,13 +45,24 @@ app.use(
     allowedHeaders: ["Content-Type"],
   })
 );
-app.use(express.json({ limit: "10kb" }));
+app.use(express.json());
 
 app.get("/health", (_req, res) => {
   res.json({ ok: true });
 });
 
 app.use("/api", aiRoutes);
+
+app.use((err, _req, res, _next) => {
+  if (err?.type === "entity.parse.failed") {
+    return res.status(400).json({ error: "Invalid JSON body." });
+  }
+  if (String(err?.message || "").startsWith("Not allowed by CORS:")) {
+    return res.status(403).json({ error: err.message });
+  }
+  console.error("Unhandled server error:", err);
+  return res.status(500).json({ error: "Internal server error." });
+});
 
 const PORT = process.env.PORT || 5000;
 

@@ -10,71 +10,44 @@ if (!apiKey) {
 }
 
 const genAI = new GoogleGenerativeAI(apiKey);
+const MODEL_CANDIDATES = [
+  "gemini-2.5-flash",
+  "gemini-3.0-flash",
+  "gemini-2.5-flash-lite",
+  "gemini-3.1-flash-lite",
+];
 
-const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+function shouldTryNextModel(error) {
+  const status = Number(error?.status || error?.code || 0);
+  const raw = String(error?.message || "").toLowerCase();
 
-async function tryGenerateWithModel(modelName, prompt) {
-  const model = genAI.getGenerativeModel({ model: modelName });
-  let attempt = 0;
-
-  while (attempt < 2) {
-    try {
-      const result = await model.generateContent({
-        contents: [{ role: "user", parts: [{ text: prompt }] }],
-        generationConfig: {
-          temperature: 0.7,
-          maxOutputTokens: 450,
-        },
-      });
-      return result.response.text();
-    } catch (error) {
-      const message = String(error?.message || "").toLowerCase();
-      const status = Number(error?.status || error?.code || 0);
-      const isTransient =
-        status === 429 ||
-        status === 503 ||
-        message.includes("quota") ||
-        message.includes("resource has been exhausted") ||
-        message.includes("too many requests");
-
-      if (!isTransient || attempt === 1) {
-        throw error;
-      }
-
-      await sleep(800 * (attempt + 1));
-      attempt += 1;
-    }
-  }
-
-  throw new Error("AI generation failed.");
+  return (
+    status === 404 ||
+    status === 403 ||
+    status === 429 ||
+    status === 503 ||
+    raw.includes("not found") ||
+    raw.includes("quota") ||
+    raw.includes("too many requests") ||
+    raw.includes("resource has been exhausted")
+  );
 }
 
-export async function generateRecipe(prompt) {
-  const modelCandidates = [
-    "gemini-2.0-flash-lite",
-    "gemini-2.0-flash",
-    "gemini-1.5-flash",
-  ];
-
+export async function generateRecipe(message) {
   let lastError;
 
-  for (const modelName of modelCandidates) {
+  for (const modelName of MODEL_CANDIDATES) {
     try {
-      return await tryGenerateWithModel(modelName, prompt);
+      const model = genAI.getGenerativeModel({ model: modelName });
+      const result = await model.generateContent(message);
+      return result.response.text();
     } catch (error) {
       lastError = error;
-      const message = String(error?.message || "").toLowerCase();
-      const status = Number(error?.status || error?.code || 0);
-      const modelUnavailable =
-        status === 404 ||
-        message.includes("not found") ||
-        message.includes("is not found for api version");
-
-      if (!modelUnavailable) {
+      if (!shouldTryNextModel(error)) {
         throw error;
       }
     }
   }
 
-  throw lastError || new Error("No supported Gemini model is available.");
+  throw lastError || new Error("No Gemini model available.");
 }

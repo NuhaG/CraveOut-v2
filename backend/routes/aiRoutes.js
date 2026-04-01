@@ -1,9 +1,8 @@
 import express from "express";
 import { askAI } from "../controllers/aiController.js";
-import { aiLimiter } from "../middleware/rateLimiter.js";
 
 const router = express.Router();
 
-router.post("/ai/chat", aiLimiter, askAI);
+router.post("/ai/chat", askAI);
 
 export default router;
