@@ -80,6 +80,8 @@ For the frontend, set your backend base URL (required for separate deployments l
 VITE_API_BASE_URL=https://your-backend.up.railway.app
 ```
 
+For Vercel, Render backend URL is set `https://craveout-v2.onrender.com`.
+
 If you proxy the backend under the same origin (for example, Vercel rewrites from `/api/*` to your backend), you can omit `VITE_API_BASE_URL`.
 
 ### 4. Run the development server
